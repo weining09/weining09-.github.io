@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <!-- 保持原有样式不变 -->
     <meta charset="UTF-8">
     <title>随机点名系统 V3.0</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
@@ -28,9 +27,11 @@
         /* 主容器样式 */
         .cyber-container {
             position: relative;
-            margin-top: 5vh;          /* 视口高度百分比布局 */
-            width: 80vw;             /* 响应式宽度 */
-            max-width: 800px;        /* 最大宽度限制 */
+            margin-top: 3vh;  /* 视口高度百分比布局 */
+            width: 90vw; /* 响应式宽度 */
+            max-width: 1000px; /* 最大宽度限制 */
+            transform: scale(1.1);
+            transform-origin: top center;
         }
 
         /* 霓虹边框效果容器 */
@@ -56,7 +57,7 @@
 
         /* 标题文字效果 */
         .title-text {
-            font-size: 2.8rem;
+            font-size: 3.5rem;
             color: var(--neon-purple);
             text-shadow: 0 0 15px var(--neon-purple); /* 文字发光 */
             position: relative;
@@ -78,7 +79,7 @@
 
         /* 版本号样式 */
         .title-version {
-            font-size: 1.4rem;
+            font-size: 1.6rem;
             color: var(--neon-blue);
             display: block;
             margin-top: 0.8rem;
@@ -94,10 +95,10 @@
             width: 100%;
             padding: 0 20px;
             text-align: center;
-            font-size: 4rem;
+            font-size: 5rem;
             color: var(--matrix-green);
             text-shadow: 0 0 20px var(--matrix-green); /* 绿色发光效果 */
-            min-height: 120px;
+            min-height: 150px;
             letter-spacing: 0.2em;    /* 字母间距 */
             transition: all 0.05s;    /* 平滑过渡 */
             font-family: 'Courier New', monospace; /* 等宽字体 */
@@ -376,19 +377,37 @@
                 },
 
                 parseSheet: function(worksheet) {
-                    const sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                    const headers = sheetData[0] || [];
-                    const targetCol = headers.findIndex(h => /^(名字|姓名|学生姓名)/i.test(h));
-                    
-                    if (targetCol === -1) throw new Error('未找到姓名列');
-                    
-                    return {
-                        data: sheetData.slice(1)
-                            .map(row => row[targetCol])
-                            .filter(name => name?.trim?.()),
-                        header: headers[targetCol]
-                    };
-                },
+					const sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+					let targetRowIndex = -1;
+					let targetCol = -1;
+
+					// 先检查第一行，再检查第二行
+					for (let rowIndex = 0; rowIndex <= 1; rowIndex++) {
+						if (!sheetData[rowIndex]) continue;
+						
+						targetCol = sheetData[rowIndex].findIndex(h => 
+							/^(名字|姓名|学生姓名)/i.test(String(h).trim())
+						);
+						
+						if (targetCol !== -1) {
+							targetRowIndex = rowIndex;
+							break;
+						}
+					}
+
+					if (targetCol === -1) throw new Error('未找到姓名列');
+					
+					// 确定数据起始行（跳过标题行）
+					const dataStart = targetRowIndex + 1;
+					const headers = sheetData[targetRowIndex];
+
+					return {
+						data: sheetData.slice(dataStart)
+							.map(row => row?.[targetCol])
+							.filter(name => name?.toString().trim()),
+						header: headers[targetCol]
+					};
+				},
 
                 toggleRoll: function() {
                     if (!students.length) return alert('请先上传学生名单！');
@@ -400,24 +419,41 @@
                 },
 
                 startAnimation: function() {
-                    let count = 0;
-                    const animate = () => {
-                        if (!isRunning) return;
-                        
-                        elements.display.textContent = 
-                            students[Math.random() * students.length | 0];
-                        elements.display.style.transform = `
-                            translate(-50%, -50%)
-                            scale(${1 + Math.sin(count * 0.1) * 0.2})
-                            rotate(${Math.sin(count * 0.05) * 3}deg)
-                        `;
-                        elements.display.style.color = 
-                            `hsl(${(count * 5) % 360}, 100%, 60%)`;
-                        
-                        count++;
-                        animationFrame = requestAnimationFrame(animate);
-                    };
-                    animate();
+					// 速度控制参数配置（核心调节点）
+					const SPEED = {
+						NAME_UPDATE: 45,      // 名字更新间隔(ms)，值越大速度越慢
+						SCALE_FREQ: 0.1,     // 缩放波动频率，值越小变化越慢
+						ROTATE_FREQ: 0.2,    // 旋转波动频率，值越小变化越慢
+						HUE_SPEED: 2,        // 颜色变化速度，值越小变化越慢
+						COUNT_STEP: 0.4       // 计数器步长，值越小整体动画越慢
+					};
+
+					let count = 0;
+					let lastUpdate = 0;
+					
+					const animate = (timestamp) => {
+						if (!isRunning) return;
+
+						// 名字刷新速度控制（核心逻辑）
+						if (timestamp - lastUpdate > SPEED.NAME_UPDATE) {
+							elements.display.textContent = 
+								students[Math.random() * students.length | 0];
+							lastUpdate = timestamp;
+						}
+
+						// 动态效果速度控制（核心公式）
+						elements.display.style.transform = `
+							translate(-50%, -50%)
+							scale(${1 + Math.sin(count * SPEED.SCALE_FREQ) * 0.2})
+							rotate(${Math.sin(count * SPEED.ROTATE_FREQ) * 3}deg)
+						`;
+						elements.display.style.color = 
+							`hsl(${(count * SPEED.HUE_SPEED) % 360}, 100%, 60%)`;
+
+						count += SPEED.COUNT_STEP;  // 全局动画进度控制
+						animationFrame = requestAnimationFrame(animate);
+					};
+					animate(performance.now());
                 },
 
                 showResult: function() {
@@ -473,7 +509,7 @@
         window.onload = () => App.init();
     </script>
 	<div class="cyber-copyright">
-		© 2025 weining 版权所有 | 版本 V3.0 <span class="crypto-signal"></span>
+		© 2025 weining 版权所有 | 版本 V1.0 <span class="crypto-signal"></span>
 	</div>
 </body>
 </html>
