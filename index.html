@@ -177,6 +177,46 @@
             50% { text-shadow: 0 0 40px var(--matrix-green); }
             100% { text-shadow: 0 0 20px var(--matrix-green); }
         }
+		
+		/* 版权信息样式 */
+		.cyber-copyright {
+			position: fixed;
+			bottom: 20px;
+			left: 50%;
+			transform: translateX(-50%);
+			color: rgba(77, 171, 255, 0.8);
+			font-size: 0.9rem;
+			text-shadow: 0 0 10px rgba(77, 171, 255, 0.5);
+			text-align: center;
+			padding: 8px 20px;
+			background: rgba(16, 16, 48, 0.9);
+			border: 1px solid rgba(77, 171, 255, 0.3);
+			border-radius: 15px;
+			backdrop-filter: blur(3px);
+			animation: copyrightPulse 2s ease-in-out infinite;
+		}
+
+		.crypto-signal {
+			display: inline-block;
+			width: 8px;
+			height: 8px;
+			background: #00ff41;
+			border-radius: 50%;
+			box-shadow: 0 0 8px #00ff41;
+			margin-left: 5px;
+			animation: cryptoBlink 1.5s steps(2) infinite;
+		}
+
+		@keyframes copyrightPulse {
+			0% { opacity: 0.8; transform: translateX(-50%) scale(0.98); }
+			50% { opacity: 1; transform: translateX(-50%) scale(1.02); }
+			100% { opacity: 0.8; transform: translateX(-50%) scale(0.98); }
+		}
+
+		@keyframes cryptoBlink {
+			0% { opacity: 0.3; }
+			100% { opacity: 1; }
+		}
     </style>
 </head>
 <body>
@@ -432,5 +472,8 @@
         // 初始化应用
         window.onload = () => App.init();
     </script>
+	<div class="cyber-copyright">
+    © 2025 weining 版权所有 | 版本 V3.0 <span class="crypto-signal"></span>
+	</div>
 </body>
 </html>
