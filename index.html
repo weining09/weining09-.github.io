@@ -378,7 +378,7 @@
                 parseSheet: function(worksheet) {
                     const sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                     const headers = sheetData[0] || [];
-                    const targetCol = headers.findIndex(h => /^(名字|姓名)/i.test(h));
+                    const targetCol = headers.findIndex(h => /^(名字|姓名|学生姓名)/i.test(h));
                     
                     if (targetCol === -1) throw new Error('未找到姓名列');
                     
