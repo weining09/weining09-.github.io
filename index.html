@@ -2,7 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>随机点名系统 V1.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>随机点名系统 V1.1</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <style>
         /* 自定义颜色变量 */
@@ -10,11 +11,18 @@
             --neon-blue: #4dabff;     /* 霓虹蓝色 */
             --neon-purple: #bc13fe;   /* 霓虹紫色 */
             --matrix-green: #00ff41;  /* 矩阵绿色 */
+            --dark-bg: #0a0a28;       /* 深蓝色背景 */
+            --panel-bg: rgba(16, 16, 48, 0.95);  /* 半透明背景 */
         }
 
-        /* 基础页面样式 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            background: #0a0a28;      /* 深蓝色背景 */
+            background: var(--dark-bg);
             font-family: 'Microsoft Yahei', sans-serif; /* 中文字体设置 */
             display: flex;
             flex-direction: column;
@@ -22,6 +30,7 @@
             min-height: 100vh;
             margin: 0;
             overflow: hidden;         /* 隐藏滚动条 */
+            color: white;
         }
 
         /* 主容器样式 */
@@ -29,14 +38,13 @@
             position: relative;
             margin-top: 3vh;  /* 视口高度百分比布局 */
             width: 90vw; /* 响应式宽度 */
-            max-width: 1000px; /* 最大宽度限制 */
             transform: scale(1.1);
             transform-origin: top center;
         }
 
         /* 霓虹边框效果容器 */
         .neon-frame {
-            background: rgba(16, 16, 48, 0.95); /* 半透明背景 */
+            background: var(--panel-bg);
             border: 3px solid var(--neon-blue);
             border-radius: 20px;
             padding: 2rem;
@@ -57,7 +65,7 @@
 
         /* 标题文字效果 */
         .title-text {
-            font-size: 3.5rem;
+            font-size: clamp(2rem, 5vw, 3.5rem);
             color: var(--neon-purple);
             text-shadow: 0 0 15px var(--neon-purple); /* 文字发光 */
             position: relative;
@@ -95,13 +103,14 @@
             width: 100%;
             padding: 0 20px;
             text-align: center;
-            font-size: 5rem;
+            font-size: clamp(2rem, 8vw, 5rem);
             color: var(--matrix-green);
             text-shadow: 0 0 20px var(--matrix-green); /* 绿色发光效果 */
             min-height: 150px;
             letter-spacing: 0.2em;    /* 字母间距 */
             transition: all 0.05s;    /* 平滑过渡 */
             font-family: 'Courier New', monospace; /* 等宽字体 */
+            will-change: transform, color;
         }
 
         /* 赛博风格按钮 */
@@ -117,9 +126,13 @@
             border-radius: 8px;
             margin: 1rem;
             transition: 0.3s;         /* 悬停过渡效果 */
+            min-width: 150px;
         }
 
-        /* 按钮扫描线效果 */
+        .cyber-button:hover {
+            box-shadow: 0 0 20px var(--neon-purple);
+        }
+
         .cyber-button::before {
             content: '';
             position: absolute;
@@ -150,7 +163,10 @@
             transition: 0.3s;
         }
 
-        /* 粒子画布样式 */
+        .file-upload:hover {
+            background: rgba(30, 30, 70, 0.8);
+        }
+
         #particles {
             position: fixed;
             width: 100%;
@@ -164,9 +180,17 @@
             color: var(--neon-blue);
             font-size: 0.9rem;
             margin-top: 1rem;
+            min-height: 20px;
         }
 
-        /* 扫描线动画 */
+        .button-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 180px;
+            gap: 1rem;
+        }
+
         @keyframes scan {
             0% { transform: translateX(-150%) rotate(45deg); }
             100% { transform: translateX(150%) rotate(45deg); }
@@ -218,6 +242,30 @@
 			0% { opacity: 0.3; }
 			100% { opacity: 1; }
 		}
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .cyber-container {
+                transform: scale(1);
+                width: 95vw;
+            }
+            
+            .neon-frame {
+                padding: 1.5rem;
+            }
+            
+            .button-container {
+                margin-top: 120px;
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .file-upload {
+                position: static;
+                margin-top: 1rem;
+                display: block;
+                text-align: center;
+            }
+        }
     </style>
 </head>
 <body>
@@ -225,11 +273,6 @@
     
     <div class="cyber-container">
         <div class="neon-frame">
-            <label class="file-upload">
-                <input type="file" id="fileInput" accept=".xlsx,.xls" hidden>
-                ⚡ 上传学生名单 ⚡
-            </label>
-            
             <div class="cyber-title">
                 <div class="title-text">
                     █▓▒░ AI助教点名系统 ░▒▓█
@@ -237,21 +280,46 @@
             </div>
             <div id="display">▶ 准备就绪</div>
 
-            <div style="text-align:center; margin-top: 180px;">
+            <div class="button-container">
                 <button class="cyber-button" id="startBtn">启动扫描</button>
                 <button class="cyber-button" id="resetBtn">系统重置</button>
+                <label class="file-upload">
+                    <input type="file" id="fileInput" accept=".xlsx,.xls" hidden>
+                    ⚡ 上传学生名单 ⚡
+                </label>
             </div>
 
-            <div class="status-info" id="status"></div>
+            <div class="status-info" id="status">等待数据输入...</div>
         </div>
     </div>
 
+    <audio id="rollSound" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3" preload="auto"></audio>
+    <audio id="resultSound" src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" preload="auto"></audio>
+    <audio id="bgMusic" loop src="https://assets.mixkit.co/music/preview/mixkit-tech-house-vibes-130.mp3" preload="auto"></audio>
+    
     <script>
-        const App = (() => {
-            // 私有状态
-            let students = [];
-            let isRunning = false;
-            let animationFrame = null;
+        // 使用模块模式组织代码
+        const RandomNamePicker = (() => {
+            // 配置常量
+            const CONFIG = {
+                ANIMATION: {
+                    NAME_UPDATE: 45,      // 名字更新间隔(ms)
+                    SCALE_FREQ: 0.1,     // 缩放波动频率
+                    ROTATE_FREQ: 0.2,    // 旋转波动频率
+                    HUE_SPEED: 2,        // 颜色变化速度
+                    COUNT_STEP: 0.4       // 计数器步长
+                },
+                MAX_PARTICLES: 120,
+                PARTICLE_CONNECTION_DISTANCE: 150
+            };
+
+            // 状态管理
+            const state = {
+                students: [],
+                isRunning: false,
+                animationFrame: null,
+                lastStudentIndex: -1
+            };
 
             // DOM 元素缓存
             const elements = {
@@ -259,257 +327,324 @@
                 startBtn: document.getElementById('startBtn'),
                 status: document.getElementById('status'),
                 fileInput: document.getElementById('fileInput'),
-                resetBtn: document.getElementById('resetBtn')
+                resetBtn: document.getElementById('resetBtn'),
+                rollSound: document.getElementById('rollSound'),
+                resultSound: document.getElementById('resultSound'),
+                bgMusic: document.getElementById('bgMusic'),
+                particlesCanvas: document.getElementById('particles')
             };
 
-            // 粒子系统模块
-            const ParticleSystem = (() => {
-                class CyberParticle {
-                    constructor(canvas) {
-                        this.canvas = canvas;
-                        this.reset(true);
-                        this.angle = Math.random() * Math.PI * 2;
-                        this.speed = 0.8 + Math.random() * 1.2;
-                        this.radius = Math.random() * 3 + 1;
+            // 工具函数
+            const utils = {
+                debounce: (func, delay) => {
+                    let timeoutId;
+                    return (...args) => {
+                        clearTimeout(timeoutId);
+                        timeoutId = setTimeout(() => func.apply(this, args), delay);
+                    };
+                },
+                
+                playSound: (audioElement) => {
+                    audioElement.currentTime = 0;
+                    audioElement.play().catch(e => console.log("音频播放被阻止:", e));
+                },
+                
+                getRandomStudent: () => {
+                    let randomIndex;
+                    // 确保不会连续两次选到同一个学生
+                    do {
+                        randomIndex = Math.floor(Math.random() * state.students.length);
+                    } while (randomIndex === state.lastStudentIndex && state.students.length > 1);
+                    
+                    state.lastStudentIndex = randomIndex;
+                    return state.students[randomIndex];
+                }
+            };
+
+            // 粒子系统
+            class CyberParticle {
+                constructor(canvas) {
+                    this.canvas = canvas;
+                    this.reset(true);
+                    this.angle = Math.random() * Math.PI * 2;
+                    this.speed = 0.8 + Math.random() * 1.2;
+                    this.radius = Math.random() * 3 + 1;
+                }
+
+                reset(init = false) {
+                    const { width, height } = this.canvas;
+                    if(init) {
+                        this.x = Math.random() * width;
+                        this.y = Math.random() * height;
+                    } else {
+                        this.x = Math.random() * width * 1.5 - width * 0.25;
+                        this.y = Math.random() * height * 1.5 - height * 0.25;
                     }
+                    this.baseX = this.x;
+                    this.baseY = this.y;
+                    this.hue = Math.random() * 60 + 200;
+                    this.lightness = 50 + Math.random() * 10;
+                    this.alpha = 0.4 + Math.random() * 0.3;
+                }
 
-                    reset(init) {
-                        const { width, height } = this.canvas;
-                        if(init) {
-                            this.x = Math.random() * width;
-                            this.y = Math.random() * height;
-                        } else {
-                            this.x = Math.random() * width * 1.5 - width * 0.25;
-                            this.y = Math.random() * height * 1.5 - height * 0.25;
-                        }
-                        this.baseX = this.x;
-                        this.baseY = this.y;
-                        this.hue = Math.random() * 60 + 200;
-                        this.lightness = 50 + Math.random() * 10;
-                        this.alpha = 0.4 + Math.random() * 0.3;
-                    }
+                update() {
+                    this.angle += this.speed * 0.02;
+                    this.x = this.baseX + Math.cos(this.angle) * 35;
+                    this.y = this.baseY + Math.sin(this.angle * 0.8) * 35;
 
-                    update() {
-                        this.angle += this.speed * 0.02;
-                        this.x = this.baseX + Math.cos(this.angle) * 35;
-                        this.y = this.baseY + Math.sin(this.angle * 0.8) * 35;
-
-                        if(this.x < -150 || this.x > this.canvas.width + 150 || 
-                           this.y < -150 || this.y > this.canvas.height + 150) {
-                            this.reset();
-                        }
-                    }
-
-                    draw(ctx) {
-                        ctx.beginPath();
-                        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                        const gradient = ctx.createRadialGradient(
-                            this.x, this.y, 0, 
-                            this.x, this.y, this.radius * 3
-                        );
-                        gradient.addColorStop(0, `hsla(${this.hue}, 80%, ${this.lightness}%, ${this.alpha})`);
-                        gradient.addColorStop(1, `hsla(${this.hue}, 90%, ${this.lightness - 20}%, 0)`);
-                        ctx.fillStyle = gradient;
-                        ctx.fill();
+                    if(this.x < -150 || this.x > this.canvas.width + 150 || 
+                       this.y < -150 || this.y > this.canvas.height + 150) {
+                        this.reset();
                     }
                 }
 
-                return {
-                    init: function() {
-                        const canvas = document.getElementById('particles');
-                        const ctx = canvas.getContext('2d');
-                        canvas.width = window.innerWidth;
-                        canvas.height = window.innerHeight;
+                draw(ctx) {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    const gradient = ctx.createRadialGradient(
+                        this.x, this.y, 0, 
+                        this.x, this.y, this.radius * 3
+                    );
+                    gradient.addColorStop(0, `hsla(${this.hue}, 80%, ${this.lightness}%, ${this.alpha})`);
+                    gradient.addColorStop(1, `hsla(${this.hue}, 90%, ${this.lightness - 20}%, 0)`);
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+                }
+            }
 
-                        const particles = Array.from({ length: 120 }, () => new CyberParticle(canvas));
+            const initParticleSystem = () => {
+                const canvas = elements.particlesCanvas;
+                const ctx = canvas.getContext('2d');
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
 
-                        const animate = () => {
-                            ctx.fillStyle = 'rgb(10, 10, 40)';
-                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                const particles = Array.from({ length: CONFIG.MAX_PARTICLES }, 
+                    () => new CyberParticle(canvas));
 
-                            particles.forEach(p => {
-                                p.update();
-                                p.draw(ctx);
-                            });
+                const animateParticles = () => {
+                    ctx.fillStyle = 'rgb(10, 10, 40)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                            particles.forEach(p1 => {
-                                particles.forEach(p2 => {
-                                    const dx = p1.x - p2.x;
-                                    const dy = p1.y - p2.y;
-                                    const dist = Math.sqrt(dx * dx + dy * dy);
-                                    if(dist < 150) {
-                                        ctx.beginPath();
-                                        ctx.moveTo(p1.x, p1.y);
-                                        ctx.lineTo(p2.x, p2.y);
-                                        ctx.strokeStyle = `hsla(${(p1.hue + p2.hue)/2}, 70%, 60%, ${1 - dist/150})`;
-                                        ctx.lineWidth = 0.8;
-                                        ctx.stroke();
-                                    }
-                                });
-                            });
+                    // 先绘制所有粒子
+                    particles.forEach(p => {
+                        p.update();
+                        p.draw(ctx);
+                    });
 
-                            requestAnimationFrame(animate);
-                        };
-                        animate();
-                    }
+                    // 然后绘制连接线
+                    particles.forEach((p1, i) => {
+                        for (let j = i + 1; j < particles.length; j++) {
+                            const p2 = particles[j];
+                            const dx = p1.x - p2.x;
+                            const dy = p1.y - p2.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            
+                            if(dist < CONFIG.PARTICLE_CONNECTION_DISTANCE) {
+                                ctx.beginPath();
+                                ctx.moveTo(p1.x, p1.y);
+                                ctx.lineTo(p2.x, p2.y);
+                                ctx.strokeStyle = `hsla(${(p1.hue + p2.hue)/2}, 70%, 60%, ${1 - dist/CONFIG.PARTICLE_CONNECTION_DISTANCE})`;
+                                ctx.lineWidth = 0.8;
+                                ctx.stroke();
+                            }
+                        }
+                    });
+
+                    requestAnimationFrame(animateParticles);
                 };
-            })();
+                
+                animateParticles();
+            };
 
-            // 业务逻辑模块
-            const BusinessLogic = {
-                handleFile: async function(e) {
+            // 业务逻辑
+            const businessLogic = {
+                handleFileUpload: async function(e) {
                     try {
                         const file = e.target.files[0];
                         if (!file) return;
 
                         const data = await file.arrayBuffer();
                         const workbook = XLSX.read(data);
-                        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
                         const { data: parsedData, header } = this.parseSheet(worksheet);
 
-                        students = parsedData;
-                        this.updateStatus(`已加载 ${students.length} 名学生 | 检测列："${header}"`);
+                        if (parsedData.length === 0) {
+                            throw new Error('文件中没有找到有效学生姓名');
+                        }
+
+                        state.students = parsedData;
+                        this.updateStatus(`已加载 ${state.students.length} 名学生 | 检测列："${header}"`);
                         elements.display.textContent = "✅ 准备完成";
+                        
+                        // 自动播放背景音乐（用户交互后）
+                        elements.bgMusic.volume = 0.3;
+                        utils.playSound(elements.bgMusic);
                     } catch (error) {
-                        alert(`错误：${error.message}`);
-                        this.reset();
+                        console.error('文件处理错误:', error);
+                        this.updateStatus(`错误: ${error.message}`);
+                        elements.display.textContent = "❌ 加载失败";
+                        setTimeout(() => this.updateStatus('请重新上传文件'), 3000);
                     }
                 },
 
                 parseSheet: function(worksheet) {
-					const sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-					let targetRowIndex = -1;
-					let targetCol = -1;
+                    const sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    let targetRowIndex = -1;
+                    let targetCol = -1;
 
-					// 先检查第一行，再检查第二行
-					for (let rowIndex = 0; rowIndex <= 1; rowIndex++) {
-						if (!sheetData[rowIndex]) continue;
-						
-						targetCol = sheetData[rowIndex].findIndex(h => 
-							/^(名字|姓名|学生姓名)/i.test(String(h).trim())
-						);
-						
-						if (targetCol !== -1) {
-							targetRowIndex = rowIndex;
-							break;
-						}
-					}
+                    // 检查前两行是否有姓名列
+                    for (let rowIndex = 0; rowIndex <= 1; rowIndex++) {
+                        if (!sheetData[rowIndex]) continue;
+                        
+                        targetCol = sheetData[rowIndex].findIndex(h => 
+                            /^(名字|姓名|学生姓名|name)/i.test(String(h).trim())
+                        );
+                        
+                        if (targetCol !== -1) {
+                            targetRowIndex = rowIndex;
+                            break;
+                        }
+                    }
 
-					if (targetCol === -1) throw new Error('未找到姓名列');
-					
-					// 确定数据起始行（跳过标题行）
-					const dataStart = targetRowIndex + 1;
-					const headers = sheetData[targetRowIndex];
-
-					return {
-						data: sheetData.slice(dataStart)
-							.map(row => row?.[targetCol])
-							.filter(name => name?.toString().trim()),
-						header: headers[targetCol]
-					};
-				},
-
-                toggleRoll: function() {
-                    if (!students.length) return alert('请先上传学生名单！');
+                    if (targetCol === -1) throw new Error('未找到姓名列，请确保文件包含"姓名"列');
                     
-                    isRunning = !isRunning;
-                    elements.startBtn.textContent = isRunning ? '终止扫描' : '启动扫描';
+                    const dataStart = targetRowIndex + 1;
+                    const headers = sheetData[targetRowIndex];
 
-                    isRunning ? this.startAnimation() : this.showResult();
+                    // 处理数据，去空去重
+                    const nameSet = new Set();
+                    const students = sheetData.slice(dataStart)
+                        .map(row => row?.[targetCol]?.toString().trim())
+                        .filter(name => {
+                            if (!name) return false;
+                            if (nameSet.has(name)) return false;
+                            nameSet.add(name);
+                            return true;
+                        });
+
+                    return {
+                        data: students,
+                        header: headers[targetCol]
+                    };
                 },
 
-                startAnimation: function() {
-					// 速度控制参数配置（核心调节点）
-					const SPEED = {
-						NAME_UPDATE: 45,      // 名字更新间隔(ms)，值越大速度越慢
-						SCALE_FREQ: 0.1,     // 缩放波动频率，值越小变化越慢
-						ROTATE_FREQ: 0.2,    // 旋转波动频率，值越小变化越慢
-						HUE_SPEED: 2,        // 颜色变化速度，值越小变化越慢
-						COUNT_STEP: 0.4       // 计数器步长，值越小整体动画越慢
-					};
+                toggleRolling: function() {
+                    if (!state.students.length) {
+                        alert('请先上传包含学生名单的Excel文件！');
+                        elements.fileInput.click();
+                        return;
+                    }
+                    
+                    state.isRunning = !state.isRunning;
+                    elements.startBtn.textContent = state.isRunning ? '终止扫描' : '启动扫描';
 
-					let count = 0;
-					let lastUpdate = 0;
-					
-					const animate = (timestamp) => {
-						if (!isRunning) return;
-
-						// 名字刷新速度控制（核心逻辑）
-						if (timestamp - lastUpdate > SPEED.NAME_UPDATE) {
-							elements.display.textContent = 
-								students[Math.random() * students.length | 0];
-							lastUpdate = timestamp;
-						}
-
-						// 动态效果速度控制（核心公式）
-						elements.display.style.transform = `
-							translate(-50%, -50%)
-							scale(${1 + Math.sin(count * SPEED.SCALE_FREQ) * 0.2})
-							rotate(${Math.sin(count * SPEED.ROTATE_FREQ) * 3}deg)
-						`;
-						elements.display.style.color = 
-							`hsl(${(count * SPEED.HUE_SPEED) % 360}, 100%, 60%)`;
-
-						count += SPEED.COUNT_STEP;  // 全局动画进度控制
-						animationFrame = requestAnimationFrame(animate);
-					};
-					animate(performance.now());
+                    if (state.isRunning) {
+                        utils.playSound(elements.rollSound);
+                        this.startNameAnimation();
+                    } else {
+                        utils.playSound(elements.resultSound);
+                        this.showFinalResult();
+                    }
                 },
 
-                showResult: function() {
-                    cancelAnimationFrame(animationFrame);
+                startNameAnimation: function() {
+                    let count = 0;
+                    let lastUpdate = 0;
+                    
+                    const animate = (timestamp) => {
+                        if (!state.isRunning) return;
+
+                        // 控制名字更新频率
+                        if (timestamp - lastUpdate > CONFIG.ANIMATION.NAME_UPDATE) {
+                            elements.display.textContent = utils.getRandomStudent();
+                            lastUpdate = timestamp;
+                        }
+
+                        // 应用动态效果
+                        elements.display.style.transform = `
+                            translate(-50%, -50%)
+                            scale(${1 + Math.sin(count * CONFIG.ANIMATION.SCALE_FREQ) * 0.2})
+                            rotate(${Math.sin(count * CONFIG.ANIMATION.ROTATE_FREQ) * 3}deg)
+                        `;
+                        elements.display.style.color = 
+                            `hsl(${(count * CONFIG.ANIMATION.HUE_SPEED) % 360}, 100%, 60%)`;
+
+                        count += CONFIG.ANIMATION.COUNT_STEP;
+                        state.animationFrame = requestAnimationFrame(animate);
+                    };
+                    
+                    animate(performance.now());
+                },
+
+                showFinalResult: function() {
+                    cancelAnimationFrame(state.animationFrame);
+                    
+                    // 重置动画
                     elements.display.style.animation = 'none';
-                    void elements.display.offsetWidth;
+                    void elements.display.offsetWidth; // 触发重绘
                     elements.display.style.animation = 'resultGlow 1s ease-out';
-                    elements.display.textContent = 
-                        `🎯 ${students[Math.random() * students.length | 0]}`;
+                    
+                    elements.display.textContent = `🎯 ${utils.getRandomStudent()}`;
                 },
 
                 updateStatus: function(text) {
-                    elements.status.innerHTML = 
-                        `<span style="color: var(--neon-purple)">⚡</span> ${text}`;
+                    elements.status.textContent = `⚡ ${text}`;
                 },
 
-                reset: function() {
-                    students = [];
-                    isRunning = false;
-                    cancelAnimationFrame(animationFrame);
+                resetSystem: function() {
+                    state.students = [];
+                    state.isRunning = false;
+                    state.lastStudentIndex = -1;
+                    
+                    cancelAnimationFrame(state.animationFrame);
+                    
                     elements.display.textContent = "▶ 准备就绪";
+                    elements.display.style = ''; // 清除所有内联样式
                     elements.startBtn.textContent = '启动扫描';
                     elements.fileInput.value = '';
                     this.updateStatus('等待数据输入...');
+                    
+                    // 停止音乐
+                    elements.bgMusic.pause();
+                    elements.bgMusic.currentTime = 0;
                 }
             };
 
             // 初始化事件监听
             const initEventListeners = () => {
                 elements.fileInput.addEventListener('change', 
-                    e => BusinessLogic.handleFile(e));
+                    e => businessLogic.handleFileUpload(e));
+                
                 elements.startBtn.addEventListener('click', 
-                    () => BusinessLogic.toggleRoll());
+                    () => businessLogic.toggleRolling());
+                
                 elements.resetBtn.addEventListener('click', 
-                    () => BusinessLogic.reset());
+                    () => businessLogic.resetSystem());
+                
+                // 响应式调整
+                window.addEventListener('resize', utils.debounce(() => {
+                    elements.particlesCanvas.width = window.innerWidth;
+                    elements.particlesCanvas.height = window.innerHeight;
+                }, 200));
             };
 
+            // 公共API
             return {
                 init: function() {
-                    ParticleSystem.init();
+                    initParticleSystem();
                     initEventListeners();
-                    BusinessLogic.updateStatus('系统就绪');
-                    window.addEventListener('resize', () => {
-                        const canvas = document.getElementById('particles');
-                        canvas.width = window.innerWidth;
-                        canvas.height = window.innerHeight;
-                    });
+                    businessLogic.updateStatus('系统就绪，请上传学生名单');
                 }
             };
         })();
 
         // 初始化应用
-        window.onload = () => App.init();
+        document.addEventListener('DOMContentLoaded', () => RandomNamePicker.init());
     </script>
-	<div class="cyber-copyright">
-		© 2025 weining 版权所有 | 版本 V1.0 <span class="crypto-signal"></span>
-	</div>
+    
+    <div class="cyber-copyright">
+        © 2025 weining 版权所有 | 版本 V1.1 <span class="crypto-signal"></span>
+    </div>
 </body>
 </html>
